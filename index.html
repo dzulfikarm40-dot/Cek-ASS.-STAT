@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Asisten - Laboratorium Statistika Industri Unpas</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #450a0a;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            min-height: 100vh;
+            transition: background-image 0.3s ease-in-out;
+        }
+        /* Panel kaca semi-transparan */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+        }
+        .glass-header {
+            background: rgba(69, 10, 10, 0.88);
+            backdrop-filter: blur(8px);
+        }
+        .clock-box {
+            background: rgba(30, 41, 59, 0.65);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body id="appBody" class="min-h-screen text-slate-900 relative p-3 sm:p-4 flex flex-col justify-center items-center">
+
+    <!-- TOMBOL HAMBURGER GARIS TIGA DI HALAMAN DEPAN (POJOK KIRI ATAS) -->
+    <div id="topBarBtn" class="fixed top-4 left-4 z-40">
+        <button onclick="openPasswordModal('main')" class="bg-red-700/80 hover:bg-red-800 text-white p-2.5 rounded-2xl shadow-md transition duration-200 backdrop-blur-md border border-red-500/40 flex items-center justify-center cursor-pointer" title="Menu Navigasi">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- TOMBOL HAMBURGER DI MENU UTAMA (POJOK KIRI ATAS) -->
+    <div id="mainTopBarBtn" class="fixed top-4 left-4 z-40 hidden">
+        <button onclick="openDropdownMenu(event)" class="bg-red-950/80 hover:bg-red-900 text-white p-2.5 rounded-2xl shadow-md transition duration-200 backdrop-blur-md border border-red-700/60 flex items-center justify-center cursor-pointer" title="Menu Navigasi">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        </button>
+        <!-- Dropdown Menu -->
+        <div id="navDropdown" class="hidden absolute left-0 mt-2 w-56 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200 py-2 z-50 text-slate-800">
+            <button onclick="requestSettingsAccess()" class="w-full text-left px-4 py-2 text-xs font-semibold hover:bg-red-50 hover:text-red-700 transition flex items-center gap-2 cursor-pointer">
+                ⚙️ Pengaturan & Database
+            </button>
+            <button onclick="requestLockAccess()" class="w-full text-left px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition flex items-center gap-2 cursor-pointer border-t border-slate-100">
+                🔒 Kembali ke Beranda (Kunci)
+            </button>
+        </div>
+    </div>
+
+    <!-- TAMPILAN 1: HALAMAN DEPAN (WELCOME SCREEN DENGAN JAM & TANGGAL BESAR) -->
+    <div id="welcomeScreen" class="w-full max-w-2xl text-white p-8 sm:p-12 rounded-3xl text-center flex flex-col items-center gap-6">
+        <div class="clock-box px-8 py-6 rounded-3xl shadow-inner w-full flex flex-col items-center gap-3">
+            <div id="welcomeDate" class="text-slate-200 font-bold text-lg sm:text-2xl tracking-wide">--</div>
+            <div id="welcomeTime" class="text-5xl sm:text-7xl font-mono font-extrabold text-white tracking-widest drop-shadow-md">--:--:--</div>
+        </div>
+    </div>
+
+    <!-- MODAL PASSWORD UNIVERSAL -->
+    <div id="passwordModal" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white/95 backdrop-blur-md rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200">
+            <h3 id="passwordModalTitle" class="text-lg font-bold text-slate-900 mb-2">🔒 Otorisasi Sistem</h3>
+            <p id="passwordModalDesc" class="text-xs text-slate-600 mb-4">Masukkan password untuk melanjutkan.</p>
+            <input type="password" id="passwordInput" placeholder="Masukkan password..." class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl mb-4 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none">
+            <div class="flex justify-end gap-2">
+                <button onclick="closePasswordModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-medium cursor-pointer">Batal</button>
+                <button onclick="verifyPassword()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold cursor-pointer">Verifikasi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAMPILAN 2: MENU UTAMA (APLIKASI UTAMA - TERSEMBUNYI DI AWAL) -->
+    <div id="mainApp" class="hidden max-w-6xl w-full mx-auto glass-panel rounded-3xl overflow-hidden border border-white/20 z-10">
+        <!-- Header Laboratorium -->
+        <div class="glass-header text-white px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-red-900/50">
+            <div>
+                <div class="text-[11px] uppercase tracking-wider text-red-300 font-semibold mb-0.5">Laboratorium Statistika Industri • Universitas Pasundan</div>
+                <h1 class="text-xl sm:text-2xl font-bold">Pemanggilan Asisten</h1>
+            </div>
+            
+            <!-- Kotak Jam dan Tanggal di Pojok Kanan Atas Header -->
+            <div id="dateTimeBadge" class="inline-flex flex-col clock-box px-4 py-2 rounded-xl font-mono shadow-sm w-full sm:w-auto text-center sm:text-right">
+                <span id="liveDate" class="font-semibold text-slate-200 text-xs sm:text-sm">--</span>
+                <span id="liveTime" class="text-xs sm:text-sm text-white font-semibold tracking-wider mt-0.5">--:--:--</span>
+            </div>
+        </div>
+
+        <!-- Tabel Asisten Utama -->
+        <div class="p-4 sm:p-5 max-h-[70vh] overflow-y-auto">
+            <div class="overflow-hidden rounded-xl border border-slate-300/60 bg-white/80 backdrop-blur-sm">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-200/90 text-slate-700 text-xs uppercase tracking-wider sticky top-0 z-10">
+                            <th class="py-2.5 px-3">Kode</th>
+                            <th class="py-2.5 px-3">Nama Asisten</th>
+                            <th class="py-2.5 px-3 text-center">Pemanggilan Audio</th>
+                            <th class="py-2.5 px-3 text-center">Kehadiran</th>
+                            <th class="py-2.5 px-3 text-center">Status Asistensi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="assistantTable" class="divide-y divide-slate-200/80 text-sm">
+                        <!-- Render via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL KONFIRMASI HAPUS -->
+    <div id="confirmDeleteModal" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm hidden flex items-center justify-center p-4 z-[9999]">
+        <div class="bg-white/95 backdrop-blur-md rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200">
+            <h3 class="text-lg font-bold text-slate-900 mb-2">⚠️ Konfirmasi Hapus</h3>
+            <p id="confirmDeleteText" class="text-xs text-slate-600 mb-6">Apakah Anda yakin ingin menghapus data asisten ini?</p>
+            <div class="flex justify-end gap-2">
+                <button onclick="closeConfirmDeleteModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-medium cursor-pointer">Batal (Esc)</button>
+                <button id="btnConfirmYes" onclick="executeDelete()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold cursor-pointer">Ya / Hapus (Enter)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PANEL PENGATURAN TERSTRUKTUR (BACKGROUND, WAKTU & DATABASE) -->
+    <div id="settingsModal" class="fixed inset-0 bg-slate-950/50 backdrop-blur-md hidden flex items-center justify-center p-3 sm:p-4 z-50">
+        <div class="bg-white/95 backdrop-blur-md rounded-3xl max-w-4xl w-full shadow-2xl flex flex-col max-h-[92vh] border border-slate-200 overflow-hidden">
+            
+            <!-- Header Modal -->
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50/80">
+                <div>
+                    <h3 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">⚙️ Panel Pengaturan &amp; Database</h3>
+                    <p class="text-[11px] text-slate-500">Kustomisasi tampilan, jam/tanggal, serta manajemen asisten laboratorium.</p>
+                </div>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-700 text-2xl font-bold p-1 cursor-pointer">&times;</button>
+            </div>
+
+            <!-- Body Modal (Scrollable) -->
+            <div class="p-5 overflow-y-auto space-y-6 text-slate-800">
+
+                <!-- SEKSI 1: CUSTOM BACKGROUND (TAMPILAN 1 & TAMPILAN 2) -->
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-red-800 mb-3 flex items-center gap-1.5">
+                        🖼️ Kustomisasi Background Tampilan (PNG/JPG)
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Background Tampilan 1 -->
+                        <div class="bg-white p-3.5 rounded-xl border border-slate-200 flex flex-col justify-between">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Background Tampilan 1 (Beranda/Jam)</label>
+                                <p class="text-[10px] text-slate-500 mb-2">Upload gambar (PNG/JPG) khusus untuk layar depan.</p>
+                                <input type="file" id="bgInput1" accept="image/png, image/jpeg" class="w-full text-xs text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 cursor-pointer">
+                            </div>
+                            <div class="mt-3 flex justify-between items-center pt-2 border-t border-slate-100">
+                                <span id="bgStatus1" class="text-[10px] font-medium text-slate-500">Standar: background.jpeg</span>
+                                <button onclick="resetBackground(1)" class="text-[11px] text-rose-600 hover:underline font-semibold cursor-pointer">Reset Default</button>
+                            </div>
+                        </div>
+
+                        <!-- Background Tampilan 2 -->
+                        <div class="bg-white p-3.5 rounded-xl border border-slate-200 flex flex-col justify-between">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Background Tampilan 2 (Menu Utama/Tabel)</label>
+                                <p class="text-[10px] text-slate-500 mb-2">Upload gambar (PNG/JPG) khusus untuk layar tabel.</p>
+                                <input type="file" id="bgInput2" accept="image/png, image/jpeg" class="w-full text-xs text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 cursor-pointer">
+                            </div>
+                            <div class="mt-3 flex justify-between items-center pt-2 border-t border-slate-100">
+                                <span id="bgStatus2" class="text-[10px] font-medium text-slate-500">Standar: background.jpeg</span>
+                                <button onclick="resetBackground(2)" class="text-[11px] text-rose-600 hover:underline font-semibold cursor-pointer">Reset Default</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEKSI 2: PENGATURAN TANGGAL & WAKTU CUSTOM -->
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-red-800 mb-3 flex items-center gap-1.5">
+                        🕒 Pengaturan Tanggal &amp; Waktu
+                    </h4>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
+                        <div class="flex items-center gap-3 pb-2 border-b border-slate-100">
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="customTimeToggle" onchange="toggleCustomTimeMode()" class="sr-only peer">
+                                <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-600 relative"></div>
+                                <span class="ml-2.5 text-xs font-semibold text-slate-800">Aktifkan Tanggal &amp; Waktu Manual (Custom)</span>
+                            </label>
+                        </div>
+
+                        <div id="customTimeForm" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-1 opacity-50 pointer-events-none transition">
+                            <div>
+                                <label class="block text-[11px] font-medium text-slate-600 mb-1">Hari &amp; Tanggal</label>
+                                <input type="date" id="customDateInput" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-medium text-slate-600 mb-1">Jam &amp; Menit</label>
+                                <input type="time" step="1" id="customTimeInput" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 focus:outline-none">
+                            </div>
+                            <div class="sm:col-span-2 md:col-span-1 flex items-end">
+                                <button onclick="saveCustomTimeSettings()" class="w-full py-2 bg-red-700 hover:bg-red-800 text-white rounded-lg text-xs font-semibold transition cursor-pointer">Simpan Waktu</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEKSI 3: KEAMANAN PIN / PASSWORD -->
+                <div class="bg-red-50/70 p-4 rounded-2xl border border-red-200">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-red-900 mb-1 flex items-center gap-1.5">
+                        🔑 Akses Password / PIN Sistem
+                    </h4>
+                    <p class="text-[11px] text-slate-600 mb-3">Password ini digunakan untuk membuka menu utama dari beranda dan mengakses panel pengaturan ini.</p>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="password" id="inputNewPassword" placeholder="Masukkan PIN/Password baru..." class="flex-1 px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-1 focus:ring-red-500 focus:outline-none">
+                        <button onclick="updateAdminPassword()" class="px-4 py-2 bg-red-700 hover:bg-red-800 text-white rounded-xl text-xs font-semibold cursor-pointer transition">Simpan Password</button>
+                    </div>
+                </div>
+
+                <!-- SEKSI 4: MANAJEMEN DATABASE ASISTEN -->
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-4">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-red-800 flex items-center gap-1.5">
+                        👥 Kelola Database Asisten
+                    </h4>
+
+                    <!-- Form Tambah / Edit -->
+                    <div class="bg-white p-4 rounded-xl border border-slate-200">
+                        <h5 id="formTitle" class="font-semibold text-xs text-slate-700 mb-3">➕ Tambah Asisten Baru</h5>
+                        <input type="hidden" id="editIndex" value="-1">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                            <div>
+                                <label class="block text-[11px] font-medium text-slate-600 mb-1">Kode Asisten</label>
+                                <input type="text" id="inputCode" placeholder="Contoh: STA-06" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-medium text-slate-600 mb-1">Nama Lengkap &amp; Gelar</label>
+                                <input type="text" id="inputName" placeholder="Nama Asisten" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 focus:outline-none">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="block text-[11px] font-medium text-slate-600 mb-1">Upload File Audio MP3 Unik (Opsional)</label>
+                            <input type="file" id="inputAudioFile" accept=".mp3,audio/mpeg" class="w-full px-3 py-1 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-600 file:mr-3 file:py-0.5 file:px-2 file:rounded file:border-0 file:text-[11px] file:font-semibold file:bg-red-50 file:text-red-700 cursor-pointer">
+                            <p id="currentAudioInfo" class="text-[10px] text-red-600 mt-1 italic"></p>
+                        </div>
+                        <div class="flex justify-end gap-2">
+                            <button onclick="resetForm()" id="btnCancelEdit" class="hidden px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-medium cursor-pointer">Batal</button>
+                            <button onclick="saveAssistantData()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold cursor-pointer">Simpan Data</button>
+                        </div>
+                    </div>
+
+                    <!-- Tabel Daftar Kelola -->
+                    <div class="overflow-x-auto border border-slate-200 rounded-xl bg-white">
+                        <table class="w-full text-left text-xs">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-600">
+                                    <th class="p-2.5">Identitas</th>
+                                    <th class="p-2.5 text-center">Kehadiran</th>
+                                    <th class="p-2.5 text-center">Status Asistensi</th>
+                                    <th class="p-2.5">Audio MP3</th>
+                                    <th class="p-2.5 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="settingsTableBody" class="divide-y divide-slate-200">
+                                <!-- Render via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+            
+            <!-- Footer Modal -->
+            <div class="px-6 py-3 bg-slate-100 border-t border-slate-200 flex justify-end">
+                <button onclick="closeSettingsModal()" class="px-5 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold cursor-pointer">Tutup Pengaturan</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentAudio = null;
+        let deleteTargetIndex = -1;
+        let passwordIntent = 'main';
+
+        // Password Admin Storage (Default: admin)
+        let adminPassword = localStorage.getItem('admin_password_stat_unpas') || 'admin';
+
+        // Background Custom Storage
+        let bgDisplay1 = localStorage.getItem('bg_display_1') || '';
+        let bgDisplay2 = localStorage.getItem('bg_display_2') || '';
+
+        // Tanggal & Waktu Custom Storage
+        let isCustomTime = localStorage.getItem('is_custom_time') === 'true';
+        let customDateVal = localStorage.getItem('custom_date_val') || '';
+        let customTimeVal = localStorage.getItem('custom_time_val') || '';
+        let customTimeOffset = parseInt(localStorage.getItem('custom_time_offset') || '0');
+
+        // Terapkan Background berdasarkan Tampilan saat ini
+        function applyCurrentBackground() {
+            const body = document.getElementById('appBody');
+            const isMainAppVisible = !document.getElementById('mainApp').classList.contains('hidden');
+
+            if (isMainAppVisible) {
+                // Tampilan 2
+                if (bgDisplay2) {
+                    body.style.backgroundImage = `url('${bgDisplay2}')`;
+                } else {
+                    body.style.backgroundImage = "url('background.jpeg')";
+                }
+            } else {
+                // Tampilan 1
+                if (bgDisplay1) {
+                    body.style.backgroundImage = `url('${bgDisplay1}')`;
+                } else {
+                    body.style.backgroundImage = "url('background.jpeg')";
+                }
+            }
+        }
+
+        // Event Listener untuk Upload Custom Background
+        document.getElementById('bgInput1').addEventListener('change', function(e) {
+            handleBgUpload(e.target.files[0], 1);
+        });
+
+        document.getElementById('bgInput2').addEventListener('change', function(e) {
+            handleBgUpload(e.target.files[0], 2);
+        });
+
+        function handleBgUpload(file, viewNum) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64Img = e.target.result;
+                if (viewNum === 1) {
+                    bgDisplay1 = base64Img;
+                    localStorage.setItem('bg_display_1', bgDisplay1);
+                } else {
+                    bgDisplay2 = base64Img;
+                    localStorage.setItem('bg_display_2', bgDisplay2);
+                }
+                updateBgUIInfo();
+                applyCurrentBackground();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function resetBackground(viewNum) {
+            if (viewNum === 1) {
+                bgDisplay1 = '';
+                localStorage.removeItem('bg_display_1');
+                document.getElementById('bgInput1').value = '';
+            } else {
+                bgDisplay2 = '';
+                localStorage.removeItem('bg_display_2');
+                document.getElementById('bgInput2').value = '';
+            }
+            updateBgUIInfo();
+            applyCurrentBackground();
+        }
+
+        function updateBgUIInfo() {
+            document.getElementById('bgStatus1').innerText = bgDisplay1 ? '✓ Custom PNG/JPG terpasang' : 'Standar: background.jpeg';
+            document.getElementById('bgStatus2').innerText = bgDisplay2 ? '✓ Custom PNG/JPG terpasang' : 'Standar: background.jpeg';
+        }
+
+        // Jam & Tanggal Logic
+        function updateLiveClock() {
+            let now;
+            if (isCustomTime && customTimeOffset) {
+                now = new Date(Date.now() + customTimeOffset);
+            } else {
+                now = new Date();
+            }
+
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const dateStr = now.toLocaleDateString('id-ID', options);
+            const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' WIB';
+            
+            const wDate = document.getElementById('welcomeDate');
+            const wTime = document.getElementById('welcomeTime');
+            if (wDate && wTime) {
+                wDate.innerText = dateStr;
+                wTime.innerText = timeStr;
+            }
+
+            const dateElement = document.getElementById('liveDate');
+            const timeElement = document.getElementById('liveTime');
+            if (dateElement && timeElement) {
+                dateElement.innerText = dateStr;
+                timeElement.innerText = timeStr;
+            }
+        }
+        setInterval(updateLiveClock, 1000);
+
+        function toggleCustomTimeMode() {
+            const toggle = document.getElementById('customTimeToggle');
+            const form = document.getElementById('customTimeForm');
+            isCustomTime = toggle.checked;
+
+            if (isCustomTime) {
+                form.classList.remove('opacity-50', 'pointer-events-none');
+            } else {
+                form.classList.add('opacity-50', 'pointer-events-none');
+                customTimeOffset = 0;
+                localStorage.setItem('is_custom_time', 'false');
+                localStorage.setItem('custom_time_offset', '0');
+                updateLiveClock();
+            }
+        }
+
+        function saveCustomTimeSettings() {
+            const dateVal = document.getElementById('customDateInput').value;
+            const timeVal = document.getElementById('customTimeInput').value;
+
+            if (!dateVal || !timeVal) {
+                alert("Silakan pilih tanggal dan jam dengan lengkap!");
+                return;
+            }
+
+            const targetDateTime = new Date(`${dateVal}T${timeVal}`);
+            customTimeOffset = targetDateTime.getTime() - Date.now();
+
+            localStorage.setItem('is_custom_time', 'true');
+            localStorage.setItem('custom_date_val', dateVal);
+            localStorage.setItem('custom_time_val', timeVal);
+            localStorage.setItem('custom_time_offset', customTimeOffset.toString());
+
+            alert("Tanggal & Waktu custom berhasil disimpan!");
+            updateLiveClock();
+        }
+
+        function initTimeSettingsUI() {
+            const toggle = document.getElementById('customTimeToggle');
+            toggle.checked = isCustomTime;
+            
+            if (customDateVal) document.getElementById('customDateInput').value = customDateVal;
+            if (customTimeVal) document.getElementById('customTimeInput').value = customTimeVal;
+
+            const form = document.getElementById('customTimeForm');
+            if (isCustomTime) {
+                form.classList.remove('opacity-50', 'pointer-events-none');
+            } else {
+                form.classList.add('opacity-50', 'pointer-events-none');
+            }
+        }
+
+        // Modal Password Logic
+        function openPasswordModal(intent) {
+            passwordIntent = intent;
+            const titleEl = document.getElementById("passwordModalTitle");
+            const descEl = document.getElementById("passwordModalDesc");
+
+            if (intent === 'lock') {
+                titleEl.innerText = "🔒 Kunci & Kembali ke Beranda";
+                descEl.innerText = "Masukkan password administrator untuk mengunci aplikasi.";
+            } else if (intent === 'settings') {
+                titleEl.innerText = "⚙️ Otorisasi Pengaturan";
+                descEl.innerText = "Masukkan password administrator untuk mengelola sistem.";
+            } else {
+                titleEl.innerText = "🔒 Otorisasi Sistem";
+                descEl.innerText = "Masukkan password untuk membuka menu utama.";
+            }
+
+            document.getElementById("passwordInput").value = "";
+            document.getElementById("passwordModal").classList.remove("hidden");
+            document.getElementById("passwordInput").focus();
+        }
+
+        function closePasswordModal() {
+            document.getElementById("passwordModal").classList.add("hidden");
+        }
+
+        function verifyPassword() {
+            const pass = document.getElementById("passwordInput").value;
+            if (pass === adminPassword) {
+                closePasswordModal();
+                if (passwordIntent === 'main') {
+                    document.getElementById("welcomeScreen").style.display = "none";
+                    document.getElementById("topBarBtn").style.display = "none";
+                    document.getElementById("mainTopBarBtn").classList.remove("hidden");
+                    document.getElementById("mainApp").classList.remove("hidden");
+                    applyCurrentBackground();
+                    renderTable();
+                } else if (passwordIntent === 'settings') {
+                    resetForm();
+                    renderSettingsTable();
+                    updateBgUIInfo();
+                    initTimeSettingsUI();
+                    document.getElementById("settingsModal").classList.remove("hidden");
+                } else if (passwordIntent === 'lock') {
+                    lockSystem();
+                }
+            } else {
+                alert("Password salah!");
+            }
+        }
+
+        document.getElementById("passwordInput").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") {
+                verifyPassword();
+            }
+        });
+
+        function updateAdminPassword() {
+            const newPass = document.getElementById("inputNewPassword").value.trim();
+            if (!newPass) {
+                alert("Password baru tidak boleh kosong!");
+                return;
+            }
+            adminPassword = newPass;
+            localStorage.setItem('admin_password_stat_unpas', adminPassword);
+            document.getElementById("inputNewPassword").value = "";
+            alert("Password/PIN administrator berhasil disimpan!");
+        }
+
+        function openDropdownMenu(e) {
+            e.stopPropagation();
+            const dropdown = document.getElementById("navDropdown");
+            dropdown.classList.toggle("hidden");
+        }
+
+        window.addEventListener("click", function() {
+            const dropdown = document.getElementById("navDropdown");
+            if (dropdown && !dropdown.classList.contains("hidden")) {
+                dropdown.classList.add("hidden");
+            }
+        });
+
+        function requestSettingsAccess() {
+            document.getElementById("navDropdown").classList.add("hidden");
+            openPasswordModal('settings');
+        }
+
+        function requestLockAccess() {
+            document.getElementById("navDropdown").classList.add("hidden");
+            openPasswordModal('lock');
+        }
+
+        function lockSystem() {
+            document.getElementById("mainApp").classList.add("hidden");
+            document.getElementById("mainTopBarBtn").classList.add("hidden");
+            document.getElementById("welcomeScreen").style.display = "flex";
+            document.getElementById("topBarBtn").style.display = "block";
+            applyCurrentBackground();
+        }
+
+        // Database Asisten Laboratorium
+        const defaultData = [
+            { code: "STA-01", name: "Muhammad Dzulfikar, S.T.", present: true, accepting: true, audio: "" },
+            { code: "STA-02", name: "Anisa Fitriani, S.T.", present: true, accepting: false, audio: "" },
+            { code: "STA-03", name: "Dimas Prasetyo", present: false, accepting: false, audio: "" },
+            { code: "STA-05", name: "Fajar Hidayat", present: true, accepting: true, audio: "" },
+            { code: "STA-06", name: "Rizky Ramadhan, S.T.", present: true, accepting: true, audio: "" },
+            { code: "STA-07", name: "Nadia Putri", present: false, accepting: false, audio: "" },
+            { code: "STA-08", name: "Aditya Pratama, S.T.", present: true, accepting: false, audio: "" },
+            { code: "STA-09", name: "Indah Permata", present: true, accepting: true, audio: "" },
+            { code: "STA-10", name: "Bagus Setiawan", present: true, accepting: true, audio: "" }
+        ];
+
+        let assistants = JSON.parse(localStorage.getItem('assistants_stat_lab_unpas')) || defaultData;
+
+        function saveDataToStorage() {
+            localStorage.setItem('assistants_stat_lab_unpas', JSON.stringify(assistants));
+            renderTable();
+            renderSettingsTable();
+        }
+
+        function renderTable() {
+            const tableBody = document.getElementById("assistantTable");
+            tableBody.innerHTML = "";
+            
+            assistants.forEach((item, index) => {
+                const row = document.createElement("tr");
+                row.className = "hover:bg-slate-50/80 transition-colors";
+
+                const presentClass = item.present 
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300' 
+                    : 'bg-rose-50 text-rose-700 border-rose-300';
+
+                const acceptingClass = item.accepting 
+                    ? 'bg-red-50 text-red-700 border-red-300' 
+                    : 'bg-amber-50 text-amber-700 border-amber-300';
+
+                row.innerHTML = `
+                    <td class="py-2.5 px-3 font-mono font-semibold text-slate-700 text-sm">${item.code}</td>
+                    <td class="py-2.5 px-3 font-bold text-slate-900 text-base">
+                        ${item.name}
+                        ${item.audio ? '<span class="ml-2 text-[10px] bg-red-100 text-red-800 font-semibold px-2 py-0.5 rounded">MP3 UNIK</span>' : ''}
+                    </td>
+                    <td class="py-2.5 px-3 text-center">
+                        <button onclick='triggerAssistantCall(${index})' class="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold shadow-sm transition flex items-center justify-center gap-1.5 mx-auto cursor-pointer">
+                            🔊 Panggil
+                        </button>
+                    </td>
+                    <td class="py-2.5 px-3 text-center font-semibold text-xs">
+                        <span class="px-3 py-1 rounded-lg border ${presentClass} inline-block">
+                            ${item.present ? 'Hadir' : 'Tidak Hadir'}
+                        </span>
+                    </td>
+                    <td class="py-2.5 px-3 text-center font-semibold text-xs">
+                        <span class="px-3 py-1 rounded-lg border ${acceptingClass} inline-block">
+                            ${item.accepting ? 'Menerima' : 'Tidak Menerima'}
+                        </span>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function triggerAssistantCall(index) {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                currentAudio = null;
+            }
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+
+            const assistant = assistants[index];
+            
+            if (!assistant.present || !assistant.accepting) {
+                return;
+            }
+
+            if (assistant.audio && assistant.audio.trim() !== "") {
+                currentAudio = new Audio(assistant.audio);
+                currentAudio.play().catch(error => {});
+            } else {
+                if ('speechSynthesis' in window) {
+                    const utterance = new SpeechSynthesisUtterance(assistant.name);
+                    utterance.lang = 'id-ID';
+                    utterance.rate = 0.9;
+                    window.speechSynthesis.speak(utterance);
+                }
+            }
+        }
+
+        function closeSettingsModal() {
+            document.getElementById("settingsModal").classList.add("hidden");
+        }
+
+        function renderSettingsTable() {
+            const tbody = document.getElementById("settingsTableBody");
+            tbody.innerHTML = "";
+            assistants.forEach((item, index) => {
+                const row = document.createElement("tr");
+                const presentClass = item.present ? 'bg-emerald-50 text-emerald-700 border-emerald-300' : 'bg-rose-50 text-rose-700 border-rose-300';
+                const acceptingClass = item.accepting ? 'bg-red-50 text-red-700 border-red-300' : 'bg-amber-50 text-amber-700 border-amber-300';
+
+                row.innerHTML = `
+                    <td class="p-2.5">
+                        <div class="font-semibold text-slate-900 text-xs">${item.name}</div>
+                        <div class="font-mono text-[10px] text-slate-500">${item.code}</div>
+                    </td>
+                    <td class="p-2.5 text-center">
+                        <select onchange="updateStatus(${index}, 'present', this.value)" class="px-2 py-1 rounded-lg text-xs font-semibold border cursor-pointer ${presentClass} focus:outline-none">
+                            <option value="true" ${item.present ? 'selected' : ''}>Hadir</option>
+                            <option value="false" ${!item.present ? 'selected' : ''}>Tidak Hadir</option>
+                        </select>
+                    </td>
+                    <td class="p-2.5 text-center">
+                        <select onchange="updateStatus(${index}, 'accepting', this.value)" class="px-2 py-1 rounded-lg text-xs font-semibold border cursor-pointer ${acceptingClass} focus:outline-none">
+                            <option value="true" ${item.accepting ? 'selected' : ''}>Menerima</option>
+                            <option value="false" ${!item.accepting ? 'selected' : ''}>Tidak Menerima</option>
+                        </select>
+                    </td>
+                    <td class="p-2.5 text-xs font-mono text-slate-600">
+                        ${item.audio ? '<span class="text-emerald-700 font-semibold">✓ MP3</span>' : '<span class="text-amber-600 italic">Default</span>'}
+                    </td>
+                    <td class="p-2.5 text-center space-x-2">
+                        <button onclick="editAssistant(${index})" class="text-red-600 hover:underline font-semibold text-xs cursor-pointer">Edit</button>
+                        <button onclick="confirmDelete(${index})" class="text-rose-600 hover:underline font-semibold text-xs cursor-pointer">Hapus</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateStatus(index, field, value) {
+            assistants[index][field] = (value === 'true');
+            saveDataToStorage();
+            renderSettingsTable();
+        }
+
+        function confirmDelete(index) {
+            deleteTargetIndex = index;
+            document.getElementById("confirmDeleteText").innerText = `Apakah Anda yakin ingin menghapus asisten "${assistants[index].name}"?`;
+            document.getElementById("confirmDeleteModal").classList.remove("hidden");
+        }
+
+        function closeConfirmDeleteModal() {
+            deleteTargetIndex = -1;
+            document.getElementById("confirmDeleteModal").classList.add("hidden");
+        }
+
+        function executeDelete() {
+            if (deleteTargetIndex !== -1) {
+                assistants.splice(deleteTargetIndex, 1);
+                saveDataToStorage();
+                renderSettingsTable();
+                closeConfirmDeleteModal();
+            }
+        }
+
+        document.addEventListener("keydown", function(e) {
+            const confirmModal = document.getElementById("confirmDeleteModal");
+            if (!confirmModal.classList.contains("hidden")) {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    executeDelete();
+                } else if (e.key === "Escape") {
+                    closeConfirmDeleteModal();
+                }
+            }
+        });
+
+        function saveAssistantData() {
+            const code = document.getElementById("inputCode").value.trim();
+            const name = document.getElementById("inputName").value.trim();
+            const fileInput = document.getElementById("inputAudioFile");
+            const editIndex = parseInt(document.getElementById("editIndex").value);
+
+            if (!code || !name) {
+                alert("Kode dan Nama asisten wajib diisi!");
+                return;
+            }
+
+            const processSave = (audioData) => {
+                if (editIndex === -1) {
+                    assistants.push({ code, name, present: true, accepting: true, audio: audioData });
+                } else {
+                    assistants[editIndex].code = code;
+                    assistants[editIndex].name = name;
+                    if (audioData !== null) {
+                        assistants[editIndex].audio = audioData;
+                    }
+                }
+
+                saveDataToStorage();
+                resetForm();
+                renderSettingsTable();
+            };
+
+            if (fileInput.files && fileInput.files[0]) {
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    processSave(e.target.result);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                let existingAudio = "";
+                if (editIndex !== -1) {
+                    existingAudio = assistants[editIndex].audio;
+                }
+                processSave(editIndex === -1 ? "" : existingAudio);
+            }
+        }
+
+        function editAssistant(index) {
+            const item = assistants[index];
+            document.getElementById("inputCode").value = item.code;
+            document.getElementById("inputName").value = item.name;
+            document.getElementById("inputAudioFile").value = "";
+            document.getElementById("editIndex").value = index;
+            document.getElementById("formTitle").innerText = "✏️ Edit Data Asisten";
+            
+            const infoText = item.audio ? "✓ File MP3 unik sudah terpasang (Pilih file baru jika ingin menggantinya)." : "Belum ada file MP3 unik (Menggunakan suara default browser).";
+            document.getElementById("currentAudioInfo").innerText = infoText;
+            
+            document.getElementById("btnCancelEdit").classList.remove("hidden");
+        }
+
+        function resetForm() {
+            document.getElementById("inputCode").value = "";
+            document.getElementById("inputName").value = "";
+            document.getElementById("inputAudioFile").value = "";
+            document.getElementById("currentAudioInfo").innerText = "";
+            document.getElementById("editIndex").value = -1;
+            document.getElementById("formTitle").innerText = "➕ Tambah Asisten Baru";
+            document.getElementById("btnCancelEdit").classList.add("hidden");
+        }
+
+        // Inisialisasi awal
+        applyCurrentBackground();
+        updateLiveClock();
+        renderTable();
+    </script>
+</body>
+</html>
